@@ -5,7 +5,6 @@ from magenta.models.melody_rnn import melody_rnn_sequence_generator
 from magenta.models.shared import sequence_generator_bundle
 from magenta.protobuf import music_pb2
 import tensorflow as tf
-import json
 import os
 
 app = Flask(__name__)
@@ -51,13 +50,15 @@ def generate():
     try:
         midi_json = request.json
         input_seq = midi_json_to_note_sequence(midi_json)
-        # Generate continuation (1 measure = 4 seconds here)
+
+        # Generate 4-second continuation (~1 measure at 120 BPM)
         generator_options = melody_rnn_sequence_generator.SequenceGeneratorOptions()
         generator_options.args['temperature'] = 1.0
         generator_options.generate_sections.add(
             start_time=input_seq.total_time,
             end_time=input_seq.total_time + 4.0
         )
+
         generated_seq = melody_rnn.generate(input_seq, generator_options)
         return jsonify(note_sequence_to_json(generated_seq))
     except Exception as e:
